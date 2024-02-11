@@ -25,5 +25,6 @@ jobs:
             # Your deployment commands go here
             git pull
             yarn install
-            yarn start # todo pm2
+            pkill -f "bun run index.ts"
+            nohup yarn start & # todo pm2
           EOF
