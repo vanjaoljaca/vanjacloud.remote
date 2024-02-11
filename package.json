@@ -8,7 +8,7 @@
         "typescript": "^5.3.3"
     },
     "scripts": {
-        "start": "bun run index.ts",
+        "start": "bun --hot run index.ts",
         "build": "bun build",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
