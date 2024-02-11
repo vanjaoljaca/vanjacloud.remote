@@ -24,7 +24,7 @@ jobs:
             cd ~/vanjacloud.remote
             # Your deployment commands go here
             git pull
-            yarn install
+            bun install
             pkill -f "bun run index.ts"
             screen -d -m yarn start # todo pm2
           EOF
