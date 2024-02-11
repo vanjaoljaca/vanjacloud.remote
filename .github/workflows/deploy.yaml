@@ -24,6 +24,8 @@ jobs:
             cd ~/vanjacloud.remote
             # Your deployment commands go here
             git pull
+            whoami
+            echo $PATH
             bun install
             pkill -f "bun run"
             screen -d -m bun run start
