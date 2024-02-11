@@ -1,4 +1,4 @@
-// app.ts
+require('dotenv').config();
 import http from 'http';
 
 const hostname = '0.0.0.0';
@@ -11,5 +11,6 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(port, hostname, () => {
-    console.log(`Server running at http://${hostname}:${port}/`);
+    const notionSecret = process.env.NOTION_SECRET;
+    console.log(`Server running at http://${hostname}:${port}/ and length: ${notionSecret ? notionSecret.length : 0}`);
 });
