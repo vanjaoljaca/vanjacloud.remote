@@ -21,6 +21,7 @@ jobs:
       - name: Deploy
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << EOF
+            source ~/.bashrc # for bun 
             cd ~/vanjacloud.remote
             # Your deployment commands go here
             git pull
