@@ -31,4 +31,5 @@ jobs:
             pkill -f "bun run" || true
             echo 'screening'
             screen -d -m /home/vanjacloud/.bun/bin/bun run start
+            screen -ls
           EOF
