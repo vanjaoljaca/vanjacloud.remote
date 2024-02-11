@@ -10,15 +10,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Set up SSH agent
+      - name: Set up SSH key
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
-      - name: Deploy to Droplet
+      - name: Deploy
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << EOF
             cd ~/vanjacloud.remote
@@ -26,5 +26,5 @@ jobs:
             git pull
             bun install
             pkill -f "bun run"
-            screen -d -m bun run start # todo pm2
+            screen -d -m bun run start
           EOF
