@@ -25,5 +25,5 @@ jobs:
             # Your deployment commands go here
             git pull
             yarn install
-            bun start # todo pm2
+            /snap/bin/bun start # todo pm2
           EOF
