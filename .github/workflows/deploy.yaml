@@ -25,7 +25,10 @@ jobs:
             cd ~/vanjacloud.remote
             # Your deployment commands go here
             git pull
+            echo 'installing'
             /home/vanjacloud/.bun/bin/bun install
+            echo 'killing'
             pkill -f "bun run" || true
+            echo 'screening'
             screen -d -m /home/vanjacloud/.bun/bin/bun run start
           EOF
