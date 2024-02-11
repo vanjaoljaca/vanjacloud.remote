@@ -1,9 +1,15 @@
 {
-  "name": "vanjacloud.remote",
-  "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT",
-  "devDependencies": {
-    "typescript": "^5.3.3"
-  }
+    "name": "vanjacloud.remote",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT",
+    "devDependencies": {
+        "typescript": "^5.3.3",
+        "@types/bun": "latest"
+    },
+    "scripts": {
+        "start": "bun run index.ts",
+        "build": "bun build",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    }
 }

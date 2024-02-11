@@ -3,27 +3,27 @@ name: Deploy to DigitalOcean Droplet
 on:
   push:
     branches:
-      - main  # Set this to the branch you want to deploy from
+      - main # Set this to the branch you want to deploy from
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up SSH agent
-      uses: webfactory/ssh-agent@v0.5.3
-      with:
-        ssh-private-key: ${{ secrets.SSH_KEY }}
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
 
-    - name: Deploy to Droplet
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << EOF
-          cd ~/vanjacloud.remote
-          # Your deployment commands go here
-          git pull
-          yarn install
-          pm2 restart all  # Example command to restart your app using PM2
-        EOF
+      - name: Deploy to Droplet
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << EOF
+            cd ~/vanjacloud.remote
+            # Your deployment commands go here
+            git pull
+            yarn install
+            bun start # todo pm2
+          EOF
