@@ -21,10 +21,11 @@ jobs:
       - name: Deploy
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << EOF
+            set -e
             cd ~/vanjacloud.remote
             # Your deployment commands go here
             git pull
             /home/vanjacloud/.bun/bin/bun install
-            pkill -f "bun run"
+            pkill -f "bun run" || true
             screen -d -m /home/vanjacloud/.bun/bin/bun run start
           EOF
