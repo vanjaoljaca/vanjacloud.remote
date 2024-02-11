@@ -26,5 +26,5 @@ jobs:
             git pull
             yarn install
             pkill -f "bun run index.ts"
-            nohup yarn start & # todo pm2
+            setsid yarn start # todo pm2
           EOF
