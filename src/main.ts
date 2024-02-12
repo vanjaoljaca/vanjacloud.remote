@@ -1,34 +1,13 @@
 require('dotenv').config();
-
-import { drizzle } from "drizzle-orm/bun-sqlite";
-import { Database } from "bun:sqlite";
-
-const sqlite = new Database("./data/sqlite.db");
-const db = drizzle(sqlite);
-
-import { sql } from "drizzle-orm";
-
-const query = sql`select "hello world" as text`;
-const result = db.get<{ text: string }>(query);
-console.log(result);
-
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-
-// https://bun.sh/guides/ecosystem/drizzle
-export const movies = sqliteTable("movies", {
-    id: integer("id").primaryKey(),
-    title: text("name"),
-    releaseYear: integer("release_year"),
-});
-
 import { Router } from '@stricjs/router';
 
 import fs from 'fs';
 import OpenAI from "openai";
 import moment from "moment";
 import Path from 'path'
+import vanjacloud, { Thought } from 'vanjacloud.shared.js';
 
-
+const thoughtDb = new Thought.ThoughtDB(vanjacloud.Keys.notion, process.env.NOTION_THOUGHTDB!);
 
 enum Folders {
     input,
@@ -65,7 +44,7 @@ export default new Router({
 })
     .get('/', () => new Response('Hi'))
     .post('/', () => new Response('Hi'))
-    .post('/post', async (req) => {
+    .post('/audio', async (req) => {
 
         const language = 'bosnian';
 
@@ -97,6 +76,9 @@ export default new Router({
         // return speechResponse;
 
         // todo: save to notion
+        const r = await thoughtDb.saveIt2(transcriptionResponse.text, Thought.ThoughtType.note, ['#audio'])
+
+        return new Response()
     });
 
 
