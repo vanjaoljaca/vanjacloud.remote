@@ -13,6 +13,7 @@ const result = db.get<{ text: string }>(query);
 console.log(result);
 
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+
 // https://bun.sh/guides/ecosystem/drizzle
 export const movies = sqliteTable("movies", {
     id: integer("id").primaryKey(),
@@ -20,40 +21,28 @@ export const movies = sqliteTable("movies", {
     releaseYear: integer("release_year"),
 });
 
-
-// const hostname = '0.0.0.0';
-// const port = 3000;
-
-// const notionSecret = process.env.NOTION_SECRET;
-// console.log(`Server running at http://${hostname}:${port}/ and length: ${notionSecret ? notionSecret.length : 0}`);
-
-// const server = Bun.serve({
-//     port,
-//     fetch(req) {
-
-//         const url = new URL(req.url);
-//         if (url.pathname === "/") return new Response("Home page!");
-//         if (url.pathname === "/blog") return new Response("Blog!");
-//         return new Response("404!");
-
-//         return new Response(Bun.file("./hello.txt"));
-
-//         return new Response(`Hello world FINAL TEST VERIFY HOT RELOAD + ${notionSecret?.length}!`);
-//     },
-// });
-
-// console.log(`Listening on ${server.url}`);
-
 import { Router } from '@stricjs/router';
 
 import fs from 'fs';
 import OpenAI from "openai";
-import { Writable } from 'stream';
-import { pipe } from "./pipePromise";
+import moment from "moment";
+import Path from 'path'
+
+
+
+enum Folders {
+    input,
+    translation,
+    translated
+}
+
+const dataFolder = './data';
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_KEY });
 
 async function translateText(text: string, sourceLanguage: string, targetLanguage: string): Promise<string> {
-    const prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}: ${text}`;
+    const prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}: ${text}
+    Make sure to convert all units and measurements to the target language, even if it is a number/digit write it out voice like ie. '1' becomes 'one' or whatever in target language.`;
     const response = await openai.completions.create({
         model: 'gpt-3.5-turbo-instruct',
         prompt: prompt,
@@ -65,40 +54,78 @@ async function translateText(text: string, sourceLanguage: string, targetLanguag
     return response.choices?.[0]?.text.trim();
 }
 
-export default new Router()
+
+async function writeFile(targetPath: fs.PathLike | fs.promises.FileHandle, data: Blob | File) {
+    const speechBuffer = await data.arrayBuffer();
+    return await fs.promises.writeFile(targetPath, new Uint8Array(speechBuffer));
+}
+
+export default new Router({
+    hostname: '0.0.0.0' // no idea why this is needed remotely to not use 127
+})
     .get('/', () => new Response('Hi'))
     .post('/', () => new Response('Hi'))
     .post('/post', async (req) => {
 
+        const language = 'bosnian';
+
+        const fileName = `${moment()}`;
+        const ext = '.m4a' // must be m4a for transcription
+
+        const targetPath = Path.join(dataFolder, Folders[Folders.input], fileName + ext);
+
         const data = await req.formData();
+        const f = data.get('cv') as File;
 
-        const file = data.get('cv') as File;
-        const arrayBuffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        await fs.promises.writeFile('./data/1.wav', uint8Array);
+        await writeFile(targetPath, f)
 
+        const transcriptionResponse = await openai.audio.transcriptions.create({
+            file: fs.createReadStream(targetPath),
+            model: 'whisper-1',
+        });
 
+        // const text = await translateText(transcriptionResponse.text, 'en', language)
 
-        // const text = await openai.audio.transcriptions.create({ file: file, model: 'whisper-1' });
-        const originalText = { text: `okay so this this is a voice recording of what I sound like I can say things like you know this is for Dante Court Bentley this is here this is there I'm about to create a custom voice that I'm going to send to Abhi see what he says` }
+        // await writeFile(Path.join(dataFolder, Folders[Folders.translation], fileName + '.txt'), new Blob([text]))
 
+        // const responseFormat = 'mp3'
+        // const speechResponse = await openai.audio.speech.create({ input: text, model: 'tts-1', voice: 'alloy', response_format: responseFormat })
 
-        console.log('translating')
-        const text = { text: await translateText(originalText.text, 'en', 'es') }
+        // const translatedPath = Path.join(dataFolder, Folders[Folders.translated], fileName + '.' + responseFormat);
+        // await writeFile(translatedPath, await speechResponse.blob())
 
-        const speech = await openai.audio.speech.create({ input: text.text, model: 'tts-1', voice: 'alloy', response_format: 'mp3' })
-        const blob = await speech.blob();
+        // return speechResponse;
 
-
-        if (speech.body === null) {
-            return new Response('TTS Failed');
-        }
-
-        const targetPath = './data/2.mp3'
-        const speechBuffer = await blob.arrayBuffer();
-        await fs.promises.writeFile(targetPath, new Uint8Array(speechBuffer));
-
-
-
-        return new Response(speech)
+        // todo: save to notion
     });
+
+
+
+async function test() {
+    const targetFile = './data/test.mp3';
+
+    if (fs.existsSync(targetFile)) {
+        return;
+    }
+
+    const str = `We found allergic people had this memory B cell against their allergen, but non-allergic people had very few, if any." 
+
+MBC2 (memory B cell type 2) holds memory for allergic conditions. This could act as a new target for allergy medication.  DOI: 10.1126/scitranslmed.adi0944`
+
+    const text = { text: await translateText(str, 'en', 'bosnian') }
+
+    const speech = await openai.audio.speech.create({ input: text.text, model: 'tts-1', voice: 'alloy', response_format: 'mp3' })
+    const blob = await speech.blob();
+    await writeFile(targetFile, blob)
+
+}
+
+// test();
+
+async function init() {
+    await fs.promises.mkdir(Path.join(dataFolder, Folders[Folders.input]), { recursive: true });
+    await fs.promises.mkdir(Path.join(dataFolder, Folders[Folders.translated]), { recursive: true });
+    await fs.promises.mkdir(Path.join(dataFolder, Folders[Folders.translation]), { recursive: true });
+}
+
+init(); // sigh
