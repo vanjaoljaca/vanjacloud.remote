@@ -33,6 +33,31 @@ async function translateText(text: string, sourceLanguage: string, targetLanguag
     return response.choices?.[0]?.text.trim();
 }
 
+async function bulkTranslateText(text: string, targetLanguages: string[]): Promise<string> {
+
+    const prompt = `Translate the following text into only these languages: [ ${targetLanguages} ]
+    Make sure to convert all units and measurements to the target language, even if it is a number/digit write it out voice like ie. '1' becomes 'one' or whatever in target language.
+    Return in JSON format: [{ text: string, to: string }]
+    NOTHING EXCEPT THE JSON OBJECT SHOULD BE RETURNED
+    --- Text:
+    ${text}
+    
+
+    Sure, here is the output in JSON:\n\n`;
+
+    console.log({ text, targetLanguages, prompt })
+
+    const response = await openai.completions.create({
+        model: 'gpt-3.5-turbo-instruct',
+        prompt: prompt,
+        temperature: 0.7,
+        max_tokens: 1024,
+
+    });
+
+    console.log(response.choices?.[0]?.text.trim())
+    return response.choices?.[0]?.text.trim();
+}
 
 async function writeFile(targetPath: fs.PathLike | fs.promises.FileHandle, data: Blob | File) {
     const speechBuffer = await data.arrayBuffer();
@@ -44,6 +69,44 @@ export default new Router({
 })
     .get('/', () => new Response('Hi'))
     .post('/', () => new Response('Hi'))
+    .post('/retrospective', async (req) => {
+        const data = await req.json()
+
+        const t = thoughtDb.getLatest(moment.duration(1, 'week'))
+
+        let thoughts = []
+        for await (const thought of t) {
+            thoughts.push(thought)
+        }
+
+        console.log({ data, thoughts })
+
+        const r = openai.completions.create({
+            model: 'gpt-3.5-turbo-instruct',
+            prompt: data.prompt + '\n\n References: \n' + thoughts.join('\n') + '\n\nSure, here is your response:\n',
+            temperature: 0.7,
+            max_tokens: 1024,
+        });
+
+        const response = {
+            text: (await r).choices[0].text
+        }
+
+        console.log({ response })
+
+        return new Response(JSON.stringify(response));
+    })
+    .post('/translate', async (req) => {
+        const data = await req.json()
+        // text: text,
+        //     to: opts?.to || defaultTo,
+        //         from: opts?.from,
+        //             traceId: opts?.traceId
+
+        const response = await bulkTranslateText(data.text, data.to)
+
+        return new Response(response);
+    })
     .post('/audio', async (req) => {
 
         const language = 'bosnian';
@@ -80,7 +143,10 @@ export default new Router({
 
         return new Response()
     });
-
+/*
+languageretrospective
+explain
+api */
 
 
 async function test() {
