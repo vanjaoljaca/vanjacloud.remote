@@ -107,6 +107,34 @@ export default new Router({
 
         return new Response(response);
     })
+    .post('/explain', async (req) => {
+        // {
+        //     request: 'explain',
+        //         target: language,
+        //             text: text
+        // });
+
+        const data = await req.json();
+
+        const r = openai.completions.create({
+            model: 'gpt-3.5-turbo-instruct',
+            prompt: `Explain the following phrase in language=${data.target} in the target language ONLY
+
+            Phrase: ${data.text}
+            \n\nSure, here is your explanation:\n`,
+            temperature: 0.7,
+            max_tokens: 1024,
+        });
+
+        const response = {
+            response: (await r).choices[0].text
+        };
+
+
+        console.log({ data, response })
+
+        return new Response(JSON.stringify(response));
+    })
     .post('/audio', async (req) => {
 
         const language = 'bosnian';
