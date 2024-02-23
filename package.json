@@ -20,6 +20,6 @@
         "drizzle-orm": "^0.29.3",
         "moment": "^2.30.1",
         "openai": "^4.27.0",
-        "vanjacloud.shared.js": "file:../vanjacloud.shared.js"
+        "vanjacloud.shared.js": "vanjaoljaca/vanjacloudjs.shared#main"
     }
 }
