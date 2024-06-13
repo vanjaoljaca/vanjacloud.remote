@@ -27,10 +27,7 @@ jobs:
       - name: Install PM2 globally using bun
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << EOF
-            if ! command -v pm2 &> /dev/null
-            then
-              bun add pm2 -g
-            fi
+            ~/.bun/bin/bun add pm2 -g
           EOF
 
       - name: Deploy
