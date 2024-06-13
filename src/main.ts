@@ -6,6 +6,7 @@ import OpenAI from "openai";
 import moment from "moment";
 import Path from 'path'
 import vanjacloud, { Thought } from 'vanjacloud.shared.js';
+import { execSync } from 'child_process';
 
 const thoughtDb = new Thought.ThoughtDB(vanjacloud.Keys.notion, process.env.NOTION_THOUGHTDB!);
 
@@ -68,6 +69,10 @@ export default new Router({
     hostname: '0.0.0.0' // no idea why this is needed remotely to not use 127
 })
     .get('/', () => new Response('Hi'))
+    .get('/version', () => {
+        const version = execSync('git rev-parse HEAD').toString().trim();
+        return new Response(version);
+    })
     .post('/', () => new Response('Hi'))
     .post('/retrospective', async (req) => {
         const data = await req.json()
