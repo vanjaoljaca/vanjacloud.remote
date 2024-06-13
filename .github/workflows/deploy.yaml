@@ -37,10 +37,10 @@ jobs:
             cd ~/vanjacloud.remote
             git fetch origin && git reset --hard origin/$(git branch --show-current) && git clean -fd
             ~/.bun/bin/bun install
-            if ~/.bun/bin/pm2 list | grep -q vanjacloud; then
-              ~/.bun/bin/pm2 reload vanjacloud
+            if ~/.bun/bin/pm2 list | grep -q vanjacloud.remote; then
+              ~/.bun/bin/pm2 reload vanjacloud.remote
             else
-              ~/.bun/bin/pm2 start 'bun --hot run src/main.ts' --name vanjacloud
+              ~/.bun/bin/pm2 start '~/.bun/bin/bun --hot run src/main.ts' --name vanjacloud.remote
             fi
           EOF
 
