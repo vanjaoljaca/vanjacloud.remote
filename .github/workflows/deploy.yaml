@@ -18,6 +18,12 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
+      - name: Update package.json version
+        run: |
+          git fetch --tags
+          VERSION=$(git rev-parse HEAD)
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo '{\"version\": \"'$VERSION'\"}' > package.json"
+
       - name: Install PM2 globally using yarn
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << EOF
@@ -40,3 +46,14 @@ jobs:
               pm2 start 'bun --hot run src/main.ts' --name vanjacloud
             fi
           EOF
+
+      - name: Verify deployment
+        run: |
+          VERSION=$(git rev-parse HEAD)
+          RESPONSE=$(curl -s http://remote.vanja.oljaca.me:3000/version)
+          if [ "$RESPONSE" != "$VERSION" ]; then
+            echo "Deployment verification failed. Expected version $VERSION, got $RESPONSE"
+            exit 1
+          else
+            echo "Deployment verified successfully."
+          fi
