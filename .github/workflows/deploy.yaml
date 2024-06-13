@@ -24,12 +24,12 @@ jobs:
           VERSION=$(git rev-parse HEAD)
           ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo '{\"version\": \"'$VERSION'\"}' > package.json"
 
-      - name: Install PM2 globally using yarn
+      - name: Install PM2 globally using bun
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << EOF
             if ! command -v pm2 &> /dev/null
             then
-              yarn global add pm2
+              bun add pm2 -g
             fi
           EOF
 
@@ -39,11 +39,11 @@ jobs:
             set -e
             cd ~/vanjacloud.remote
             git fetch origin && git reset --hard origin/$(git branch --show-current) && git clean -fd
-            /home/vanjacloud/.bun/bin/bun install
-            if pm2 list | grep -q vanjacloud; then
-              pm2 reload vanjacloud
+            ~/.bun/bin/bun install
+            if ~/.bun/bin/pm2 list | grep -q vanjacloud; then
+              ~/.bun/bin/pm2 reload vanjacloud
             else
-              pm2 start 'bun --hot run src/main.ts' --name vanjacloud
+              ~/.bun/bin/pm2 start 'bun --hot run src/main.ts' --name vanjacloud
             fi
           EOF
 
