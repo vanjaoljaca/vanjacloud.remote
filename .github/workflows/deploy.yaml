@@ -18,12 +18,25 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
+      - name: Install PM2 globally using yarn
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << EOF
+            if ! command -v pm2 &> /dev/null
+            then
+              yarn global add pm2
+            fi
+          EOF
+
       - name: Deploy
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << EOF
             set -e
             cd ~/vanjacloud.remote
-            # Your deployment commands go here
             git fetch origin && git reset --hard origin/$(git branch --show-current) && git clean -fd
             /home/vanjacloud/.bun/bin/bun install
+            if pm2 list | grep -q vanjacloud; then
+              pm2 reload vanjacloud
+            else
+              pm2 start 'bun --hot run src/main.ts' --name vanjacloud
+            fi
           EOF
