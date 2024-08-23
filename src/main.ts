@@ -65,8 +65,16 @@ async function writeFile(targetPath: fs.PathLike | fs.promises.FileHandle, data:
     return await fs.promises.writeFile(targetPath, new Uint8Array(speechBuffer));
 }
 
+import { readFileSync } from "fs";
+const options = {
+    key: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/privkey.pem"),
+    cert: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/fullchain.pem"),
+};
+
 export default new Router({
-    hostname: '0.0.0.0' // no idea why this is needed remotely to not use 127
+    hostname: '0.0.0.0', // no idea why this is needed remotely to not use 127
+    port: 443,
+    ...options,
 })
     .get('/', () => new Response('Hi'))
     .get('/version', () => {
