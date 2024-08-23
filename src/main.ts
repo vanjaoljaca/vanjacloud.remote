@@ -73,7 +73,6 @@ const options = {
 
 export default new Router({
     hostname: '0.0.0.0', // no idea why this is needed remotely to not use 127
-    port: 443,
     ...options,
 })
     .get('/', () => new Response('Hi'))
