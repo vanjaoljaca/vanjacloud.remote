@@ -47,7 +47,7 @@ jobs:
       - name: Verify deployment
         run: |
           VERSION=$(git rev-parse HEAD)
-          RESPONSE=$(curl -s https://remote.vanja.oljaca.me:3000/version )
+          RESPONSE=$(curl -v https://remote.vanja.oljaca.me:3000/version )
           if [ "$RESPONSE" != "$VERSION" ]; then
             echo "Deployment verification failed. Expected version $VERSION, got $RESPONSE"
             exit 1
