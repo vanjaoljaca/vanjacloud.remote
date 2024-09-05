@@ -1,12 +1,5 @@
 require('dotenv').config();
-import { Router } from '@stricjs/router';
 
-import fs from 'fs';
-import OpenAI from "openai";
-import moment from "moment";
-import Path from 'path'
-import vanjacloud, { Thought } from 'vanjacloud.shared.js';
-import { execSync } from 'child_process';
 
 const thoughtDb = new Thought.ThoughtDB(vanjacloud.Keys.notion, process.env.NOTION_THOUGHTDB!);
 
@@ -71,16 +64,31 @@ const options = {
     cert: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/fullchain.pem"),
 };
 
+
+const corsOptions = {
+    origin: '*', // or ['https://www.google.com'] for more restrictive setup
+    methods: ['GET', 'POST', 'OPTIONS'],
+    headers: ['Content-Type', 'Authorization'],
+    maxAge: 86400, // 24 hours
+  };
+  
+  new CORS(corsOptions)
+
 export default new Router({
     hostname: '0.0.0.0', // no idea why this is needed remotely to not use 127
     ...options,
 })
+    // .use()
     .get('/', () => new Response('Hi'))
     .get('/version', () => {
         const version = execSync('git rev-parse HEAD').toString().trim();
         return new Response(version);
     })
     .post('/', () => new Response('Hi'))
+    .post('/myspace', async (req) => {
+        const data = await req.json()
+        return new Response(JSON.stringify(data))
+    })
     .post('/retrospective', async (req) => {
         const data = await req.json()
 
@@ -217,3 +225,14 @@ async function init() {
 }
 
 init(); // sigh
+
+import { Router } from '@stricjs/router';
+import { CORS } from '@stricjs/utils';
+
+
+import fs from 'fs';
+import OpenAI from "openai";
+import moment from "moment";
+import Path from 'path'
+import vanjacloud, { Thought } from 'vanjacloud.shared.js';
+import { execSync } from 'child_process';
