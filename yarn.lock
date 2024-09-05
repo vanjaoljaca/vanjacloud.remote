@@ -1539,8 +1539,9 @@ v8-compile-cache-lib@^3.0.1:
   resolved "https://registry.yarnpkg.com/v8-compile-cache-lib/-/v8-compile-cache-lib-3.0.1.tgz#6336e8d71965cb3d35a1bbb7868445a7c05264bf"
   integrity sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==
 
-"vanjacloud.shared.js@file:../vanjacloud.shared.js":
+"vanjacloud.shared.js@github:vanjaoljaca/vanjacloud.shared.js#main":
   version "1.0.0"
+  resolved "https://codeload.github.com/vanjaoljaca/vanjacloud.shared.js/tar.gz/aa3d0766add25f3ca562d17abaa292995090c199"
   dependencies:
     "@babel/runtime" "^7.22.6"
     "@mem-labs/mem-node" "^0.1.1"

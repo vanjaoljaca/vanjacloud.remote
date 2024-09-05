@@ -60,8 +60,8 @@ async function writeFile(targetPath: fs.PathLike | fs.promises.FileHandle, data:
 
 import { readFileSync } from "fs";
 const options = {
-    key: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/privkey.pem"),
-    cert: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/fullchain.pem"),
+    // key: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/privkey.pem"),
+    // cert: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/fullchain.pem"),
 };
 
 
