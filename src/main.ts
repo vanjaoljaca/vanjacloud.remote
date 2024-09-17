@@ -58,21 +58,21 @@ async function writeFile(targetPath: fs.PathLike | fs.promises.FileHandle, data:
     return await fs.promises.writeFile(targetPath, new Uint8Array(speechBuffer));
 }
 
-import { readFileSync } from "fs";
-const options = {
-    key: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/privkey.pem"),
-    cert: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/fullchain.pem"),
-};
-
 
 const corsOptions = {
     origin: '*', // or ['https://www.google.com'] for more restrictive setup
     methods: ['GET', 'POST', 'OPTIONS'],
     headers: ['Content-Type', 'Authorization'],
     maxAge: 86400, // 24 hours
-  };
-  
-  new CORS(corsOptions)
+};
+
+new CORS(corsOptions)
+
+
+const options = process.env.DEV ? {} : {
+    key: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/privkey.pem"),
+    cert: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/fullchain.pem"),
+};
 
 export default new Router({
     hostname: '0.0.0.0', // no idea why this is needed remotely to not use 127
@@ -190,12 +190,48 @@ export default new Router({
         const r = await thoughtDb.saveIt2(transcriptionResponse.text, Thought.ThoughtType.note, ['#audio'])
 
         return new Response()
+    })
+    .post('/debug/weeklysummary', async (req) => {
+        await weeklySummary();
     });
-/*
-languageretrospective
-explain
-api */
 
+// Schedule job for Sunday at 5 PM every week
+const job = schedule.scheduleJob({ hour: 17, minute: 0, dayOfWeek: 0 }, async () => {
+    await weeklySummary();
+    return new Response('ok');
+});
+
+
+async function weeklySummary() {
+
+    adze.info('Running weekly retrospective')
+
+    const t = thoughtDb.getLatest(moment.duration(1, 'week'))
+
+    let thoughts = []
+    for await (const thought of t) {
+        thoughts.push(thought)
+    }
+
+    const prompt = `Summarize this shiz`;
+
+    console.log({ prompt, thoughts })
+
+
+    const r = openai.completions.create({
+        model: 'gpt-3.5-turbo-instruct',
+        prompt: prompt + '\n\n References: \n' + thoughts.join('\n') + '\n\nSure, here is your response:\n',
+        temperature: 0.7,
+        max_tokens: 1024,
+    });
+
+    const response = {
+        text: (await r).choices[0].text
+    }
+
+    // todo: email it somewhere?
+
+}
 
 async function test() {
     const targetFile = './data/test.mp3';
@@ -222,6 +258,8 @@ async function init() {
     await fs.promises.mkdir(Path.join(dataFolder, Folders[Folders.input]), { recursive: true });
     await fs.promises.mkdir(Path.join(dataFolder, Folders[Folders.translated]), { recursive: true });
     await fs.promises.mkdir(Path.join(dataFolder, Folders[Folders.translation]), { recursive: true });
+
+    await setupLogging();
 }
 
 init(); // sigh
@@ -236,3 +274,68 @@ import moment from "moment";
 import Path from 'path'
 import vanjacloud, { Thought } from 'vanjacloud.shared.js';
 import { execSync } from 'child_process';
+import schedule from 'node-schedule';
+import adze from "adze";
+import { readFileSync } from "fs";
+import { Bot } from 'grammy';
+
+
+/* logging set up */
+import Log, { setup } from 'adze';
+import { TelegramMiddleware } from '../other/TelegramMiddleware';
+// import AdzeFileTransport from '@adze/transport-file';
+
+// const fileTransport = new AdzeTransportFile({ directory: './logs', frequency: '12h' });
+// await fileTransport.load();
+
+async function setupLogging() {
+    const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN!);
+
+    // const telegramMw = new TelegramMiddleware(bot);
+    // await telegramMw.load();
+
+    const logStore = setup({
+        middleware: [
+            // fileTransport, 
+            // telegramMw
+        ],
+    });
+
+    const VANJA_CHAT_ID = 7502414131;
+
+    bot.on('message', (ctx) => {
+        const chatId = ctx.chat.id;
+        console.log('Chat ID:', chatId);
+        ctx.reply(`Your chat ID is: ${chatId}`);
+    });
+
+    const allListenerId = logStore.addListener('*', (log: Log) => {
+        // const data = log.data;
+        bot.api.sendMessage(VANJA_CHAT_ID, JSON.stringify(log.data?.message.slice(1)))
+            // .then(() => console.log('Message sent via grammY'))
+            .catch((err) => console.error('Error:', err));
+    });
+
+
+
+    adze.info('starting bot')
+
+    // const logger = adze.timestamp.seal();
+    // export default logger;
+
+
+    const poller = bot.start();
+    bot.catch((e) => {
+        adze.error('error starting telegram bot', e)
+    })
+
+    process.on('SIGUSR2', () => {
+        console.log('Hot reload triggered. Cleaning up...');
+        bot.stop();
+    });
+
+
+    adze.info('telegram bot started')
+
+}
+
