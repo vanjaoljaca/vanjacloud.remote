@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const isDev = process.env.DEV;
 
 const thoughtDb = new Thought.ThoughtDB(vanjacloud.Keys.notion, process.env.NOTION_THOUGHTDB!);
 
@@ -69,7 +70,7 @@ const corsOptions = {
 new CORS(corsOptions)
 
 
-const options = process.env.DEV ? {} : {
+const options = isDev ? {} : {
     key: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/privkey.pem"),
     cert: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/fullchain.pem"),
 };
@@ -78,11 +79,21 @@ export default new Router({
     hostname: '0.0.0.0', // no idea why this is needed remotely to not use 127
     ...options,
 })
-    // .use()
+.guard("/", async (req, res) => {
+        const debugHeader = req.headers.get('VanjaCloud-Debug');
+        adze.info('debug header', debugHeader)
+        // todo: get logging to send logs to telegram if debugging
+        
+    })
     .get('/', () => new Response('Hi'))
     .get('/version', () => {
         const version = execSync('git rev-parse HEAD').toString().trim();
-        return new Response(version);
+        const latestCommitDate = execSync('git log -1 --format=%cd').toString().trim();
+        const versionInfo = {
+            commitHash: version,
+            commitDate: latestCommitDate
+        };
+        return new Response(JSON.stringify(versionInfo));
     })
     .post('/', () => new Response('Hi'))
     .post('/myspace', async (req) => {
@@ -264,7 +275,7 @@ async function init() {
 
 init(); // sigh
 
-import { Router } from '@stricjs/router';
+import { Router, wrap } from '@stricjs/router';
 import { CORS } from '@stricjs/utils';
 
 
@@ -289,7 +300,7 @@ import { TelegramMiddleware } from '../other/TelegramMiddleware';
 // await fileTransport.load();
 
 async function setupLogging() {
-    const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN!);
+
 
     // const telegramMw = new TelegramMiddleware(bot);
     // await telegramMw.load();
@@ -301,41 +312,42 @@ async function setupLogging() {
         ],
     });
 
-    const VANJA_CHAT_ID = 7502414131;
 
-    bot.on('message', (ctx) => {
-        const chatId = ctx.chat.id;
-        console.log('Chat ID:', chatId);
-        ctx.reply(`Your chat ID is: ${chatId}`);
-    });
+    if (isDev) {
+        adze.info('dev mode: not sending telegram messages')
+    }
+    else {
+        const VANJA_CHAT_ID = 7502414131;
+        const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN!);
 
-    const allListenerId = logStore.addListener('*', (log: Log) => {
-        // const data = log.data;
-        bot.api.sendMessage(VANJA_CHAT_ID, JSON.stringify(log.data?.message.slice(1)))
-            // .then(() => console.log('Message sent via grammY'))
-            .catch((err) => console.error('Error:', err));
-    });
+        bot.on('message', (ctx) => {
+            const chatId = ctx.chat.id;
+            console.log('Chat ID:', chatId);
+            ctx.reply(`Your chat ID is: ${chatId}`);
+        });
+
+        const allListenerId = logStore.addListener('*', (log: Log) => {
+            // const data = log.data;
+            bot.api.sendMessage(VANJA_CHAT_ID, JSON.stringify(log.data?.message.slice(1)))
+                // .then(() => console.log('Message sent via grammY'))
+                .catch((err) => console.error('Error:', err));
+        });
+
+        adze.info('starting telegram bot')
+
+        const poller = bot.start();
+        bot.catch((e) => {
+            adze.error('error starting telegram bot', e)
+        })
+
+        process.on('SIGUSR2', () => {
+            console.log('Hot reload triggered. Cleaning up...');
+            bot.stop();
+        });
 
 
+        adze.info('telegram bot started')
+    }
 
-    adze.info('starting bot')
-
-    // const logger = adze.timestamp.seal();
-    // export default logger;
-
-
-    const poller = bot.start();
-    bot.catch((e) => {
-        adze.error('error starting telegram bot', e)
-    })
-
-    process.on('SIGUSR2', () => {
-        console.log('Hot reload triggered. Cleaning up...');
-        bot.stop();
-    });
-
-
-    adze.info('telegram bot started')
 
 }
-
