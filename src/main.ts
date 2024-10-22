@@ -18,10 +18,11 @@ async function translateText(text: string, sourceLanguage: string, targetLanguag
     const prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}: ${text}
     Make sure to convert all units and measurements to the target language, even if it is a number/digit write it out voice like ie. '1' becomes 'one' or whatever in target language.`;
     const response = await openai.completions.create({
-        model: 'gpt-3.5-turbo-instruct',
+        model: "gpt-4o-mini",
         prompt: prompt,
         temperature: 0.7,
         max_tokens: 1024,
+        response_format: { type: 'json_object' } 
     });
 
     console.log(response.choices?.[0]?.text.trim())
@@ -75,7 +76,7 @@ const options = isDev ? {} : {
     cert: readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/fullchain.pem"),
 };
 
-export default new Router({
+export const server = new Router({
     hostname: '0.0.0.0', // no idea why this is needed remotely to not use 127
     ...options,
 })
