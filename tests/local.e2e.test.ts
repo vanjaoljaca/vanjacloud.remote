@@ -39,6 +39,7 @@ describe('Translate API', () => {
       }),
     });
 
+    adze.debug('test:response', {response});
     expect(response.status).toBe(200);
     const text = await response.text();
     adze.info('test:response', {text});

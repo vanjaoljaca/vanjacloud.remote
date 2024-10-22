@@ -6,8 +6,14 @@ import fs from 'fs';
 import OpenAI from "openai";
 import moment from "moment";
 import Path from 'path';
-import vanjacloud, { Thought } from 'vanjacloud.shared.js';
-import adze from "adze";
+import vanjacloud, { AzureTranslate, Thought } from 'vanjacloud.shared.js';
+
+import adze, { setup } from 'adze';
+
+
+setup({
+  activeLevel: 'debug',
+});
 
 export interface CreateServerOptions {
   useHttps?: boolean;
@@ -92,9 +98,11 @@ export function createServer(options: CreateServerOptions) {
       return new Response(JSON.stringify(response));
     })
     .post('/translate', async (req) => {
+        
       const data = await req.json();
-      const response = await bulkTranslateText(openai, data.text, data.to);
-      return new Response(response);
+      adze.debug('/translate', {data})
+      const response = await bulkTranslateText(data.text, data.to);
+      return new Response(JSON.stringify(response));
     })
     .post('/explain', async (req) => {
       const data = await req.json();
@@ -135,37 +143,43 @@ export function createServer(options: CreateServerOptions) {
 
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
-const CalendarEvent = z.array(z.object({
+import { Translation } from 'vanjacloud.shared.js/dist/src/AzureTranslate';
+const TranslationResult = z.array(z.object({
     text: z.string(),
     to: z.string(),
   }));
 
-async function bulkTranslateText(openai: OpenAI, text: string, targetLanguages: string[]): Promise<string> {
-  const prompt = `Translate the following text into only these languages: [ ${targetLanguages} ]
-  Make sure to convert all units and measurements to the target language, even if it is a number/digit write it out voice like ie. '1' becomes 'one' or whatever in target language.
-  Return in JSON format: [{ text: string, to: string }]
-  NOTHING EXCEPT THE JSON OBJECT SHOULD BE RETURNED
-  --- Text:
-  ${text}
-  
-
-  Sure, here is the output in JSON:\n\n`;
-
-  console.log({ text, targetLanguages, prompt });
-
-  const response = await openai.completions.create({
-    // model: 'gpt-4o-mini',
-    model: 'gpt-3.5-turbo-instruct',
-    prompt: prompt,
-    temperature: 0.7,
-    max_tokens: 1024
-  }, {
-    response_format: zodResponseFormat(CalendarEvent, "event"),
-  });
-
-  adze.info('response:bulkTranslateText', {text}, response.choices?.[0]);
-  return response.choices?.[0]?.text.trim();
+async function bulkTranslateText(text: string, targetLanguages: string[]): Promise<Translation[]> {
+    adze.debug('bulkTranslate', {text, targetLanguages, key: vanjacloud.Keys.azure.translate});
+    const translator = new AzureTranslate(vanjacloud.Keys.azure.translate);
+    const r = await translator.translate(text, {to: targetLanguages});
+    adze.debug('bulkTranslate', {r});
+    return r;
 }
+
+// async function newOpenAITranslate(openai: OpenAI, text: string, targetLanguages: string[]): Promise<string> {
+//     const prompt = `Translate the following text into only these languages: [ ${targetLanguages} ]
+//   Make sure to convert all units and measurements to the target language, even if it is a number/digit write it out voice like ie. '1' becomes 'one' or whatever in target language.
+//   Expected output format JSON: [{text: string, to: string}]
+//   --- Text:
+//   ${text}
+//   `;
+
+//   console.log({ text, targetLanguages, prompt });
+
+//   const response = await openai.chat.completions.create({
+//     model: 'gpt-4o-mini',
+
+//     prompt: prompt,
+//     temperature: 0.7,
+//     max_tokens: 1024
+//   }, {
+//     response_format: zodResponseFormat(TranslationResult, "event"),
+//   });
+
+//   adze.info('response:bulkTranslateText', {text}, response.choices?.[0]);
+//   return response.choices?.[0]?.message.content;
+// }
 
 async function writeFile(targetPath: fs.PathLike | fs.promises.FileHandle, data: Blob | File) {
   const speechBuffer = await data.arrayBuffer();
