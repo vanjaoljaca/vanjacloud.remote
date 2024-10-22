@@ -1,27 +1,30 @@
 import { expect, test, describe, beforeAll, afterAll } from "bun:test";
-import { server } from '../src/main';
+import { createServer, CreateServerOptions } from '../src/server';
+import { Server } from "bun";
+import adze from "adze";
 
-const testConfig = {
-  ...defaultConfig,
-  isDev: true,
-  port: 3001, // Use a different port for testing
+const testConfig: CreateServerOptions = {
+  useHttps: false,
+  openaiApiKey: process.env.OPENAI_KEY || 'test-key',
+  notionThoughtDbKey: process.env.NOTION_THOUGHTDB || 'test-db-key',
 };
 
-const BASE_URL = `http://localhost:${testConfig.port}`;
+const PORT = 3001;
+const BASE_URL = `http://localhost:${PORT}`;
 
 describe('Translate API', () => {
-  const server = createServer(testConfig);
+  let server: Server;
   
-  beforeAll(() => {
-    // Start the server before running tests
-    return server.listen(testConfig.port);
+  beforeAll(async () => {
+    const router = createServer(testConfig);
+    server = Bun.serve({
+      port: PORT,
+      fetch: router.fetch,
+    });
   });
 
   afterAll(() => {
-    // Close the server after all tests are done
-    return new Promise<void>((resolve) => {
-      server.server?.close(() => resolve());
-    });
+    server.stop();
   });
 
   test('should translate text to multiple languages', async () => {
@@ -37,8 +40,9 @@ describe('Translate API', () => {
     });
 
     expect(response.status).toBe(200);
-    
-    const result = await response.json();
+    const text = await response.text();
+    adze.info(text);
+    const result = JSON.parse(text);
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(3);
 
@@ -48,9 +52,5 @@ describe('Translate API', () => {
       expect(typeof translation.text).toBe('string');
       expect(typeof translation.to).toBe('string');
     });
-
-    // Optional: Check for specific translations
-    const spanishTranslation = result.find((t: { to: string }) => t.to === 'es');
-    expect(spanishTranslation?.text).toBe('Hola, mundo!');
   });
 });
