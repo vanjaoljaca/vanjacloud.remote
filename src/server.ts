@@ -133,6 +133,13 @@ export function createServer(options: CreateServerOptions) {
   return server;
 }
 
+import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
+const CalendarEvent = z.array(z.object({
+    text: z.string(),
+    to: z.string(),
+  }));
+
 async function bulkTranslateText(openai: OpenAI, text: string, targetLanguages: string[]): Promise<string> {
   const prompt = `Translate the following text into only these languages: [ ${targetLanguages} ]
   Make sure to convert all units and measurements to the target language, even if it is a number/digit write it out voice like ie. '1' becomes 'one' or whatever in target language.
@@ -147,13 +154,16 @@ async function bulkTranslateText(openai: OpenAI, text: string, targetLanguages: 
   console.log({ text, targetLanguages, prompt });
 
   const response = await openai.completions.create({
+    // model: 'gpt-4o-mini',
     model: 'gpt-3.5-turbo-instruct',
     prompt: prompt,
     temperature: 0.7,
-    max_tokens: 1024,
+    max_tokens: 1024
+  }, {
+    response_format: zodResponseFormat(CalendarEvent, "event"),
   });
 
-  console.log(response.choices?.[0]?.text.trim());
+  adze.info('response:bulkTranslateText', {text}, response.choices?.[0]);
   return response.choices?.[0]?.text.trim();
 }
 

@@ -41,7 +41,7 @@ describe('Translate API', () => {
 
     expect(response.status).toBe(200);
     const text = await response.text();
-    adze.info(text);
+    adze.info('test:response', {text});
     const result = JSON.parse(text);
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(3);
