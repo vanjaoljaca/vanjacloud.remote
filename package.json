@@ -27,6 +27,6 @@
     "moment": "^2.30.1",
     "node-schedule": "^2.1.1",
     "openai": "^4.68.1",
-    "vanjacloud.shared.js": "github:vanjaoljaca/vanjacloud.shared.js#main"
+    "vanjacloud.shared.js": "github:vanjaoljaca/vanjacloud.shared.js"
   }
 }
