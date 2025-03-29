@@ -89,6 +89,6 @@ async function test() {
 }
 
 init();
-await test();
+// await test();
 
 export default server;
