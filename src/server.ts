@@ -73,6 +73,7 @@ export function createServer(options: CreateServerOptions) {
         commitDate: latestCommitDate
       };
       console.log('versionInfo', versionInfo);
+
       return new Response(JSON.stringify(versionInfo));
     })
     .post('/', () => new Response('Hi'))
