@@ -74,7 +74,21 @@ async function init() {
     await setupLogging();
 }
 
-init();
+import { MochiAPI } from 'vanjacloud.shared.js'
+async function test() {
+    const mochi = new MochiAPI(process.env.MOCHI_KEY)
+    adze.info('mochi created, listing cards', mochi)
+    const r = await mochi.listDecks();
+    const decks = r.docs
+    const vanjacloud = decks.find(d => d.name == 'vanjacloud')
+    adze.info('vanjacloud deck', vanjacloud)
+    const c = await mochi.addCard(vanjacloud.id, {
+        content: 'test?\n-----\nyes!'
+    })
+    adze.info(c)
+}
 
+init();
+await test();
 
 export default server;
