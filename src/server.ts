@@ -55,7 +55,7 @@ export function createServer(options: CreateServerOptions) {
 
   const server = new Router({
     hostname: '0.0.0.0',
-    port: 3000,
+    // port: 3000,
     ...serverOptions,
   });
 
