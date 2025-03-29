@@ -9,6 +9,8 @@ import Path from 'path';
 import vanjacloud, { AzureTranslate, Thought } from 'vanjacloud.shared.js';
 
 import adze, { setup } from 'adze';
+import { MochiAPI } from 'vanjacloud.shared.js'
+const mochi = new MochiAPI(process.env.MOCHI_KEY)
 
 
 setup({
@@ -77,7 +79,23 @@ export function createServer(options: CreateServerOptions) {
             return new Response(JSON.stringify(versionInfo));
         })
         .post('/', () => new Response('Hi'))
-        .post('/mochi/add', () => {
+        .post('/mochi/add', async (req) => {
+            const data = await req.json();
+            const cards = data.cards
+
+
+            adze.info('adding cards', cards)
+            const r = await mochi.listDecks();
+            const decks = r.docs
+            const vanjacloud = decks.find(d => d.name == 'vanjacloud')
+            adze.info('vanjacloud deck', vanjacloud)
+            for (const card of cards) {
+                const c = await mochi.addCard(vanjacloud.id, {
+                    content: `${card.front}\n-----\n${card.back}`
+                })
+
+                adze.info(c)
+            }
             return new Response('Hi');
         })
         .post('/myspace', async (req) => {
