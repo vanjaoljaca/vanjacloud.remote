@@ -19,17 +19,17 @@ const dataFolder = './data';
 
 let httpsOptions;
 if (!isDev) {
-  httpsOptions = {
-    key: fs.readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/privkey.pem", 'utf8'),
-    cert: fs.readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/fullchain.pem", 'utf8'),
-  };
+    httpsOptions = {
+        key: fs.readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/privkey.pem", 'utf8'),
+        cert: fs.readFileSync("/etc/letsencrypt/live/remote.vanja.oljaca.me/fullchain.pem", 'utf8'),
+    };
 }
 
 const server: Server = createServer({
-  useHttps: !isDev,
-  httpsOptions,
-  openaiApiKey: process.env.OPENAI_KEY!,
-  notionThoughtDbKey: process.env.NOTION_THOUGHTDB!
+    useHttps: !isDev,
+    httpsOptions,
+    openaiApiKey: process.env.OPENAI_KEY!,
+    notionThoughtDbKey: process.env.NOTION_THOUGHTDB!
 });
 
 // Schedule job for Sunday at 5 PM every week
@@ -75,6 +75,7 @@ async function init() {
 }
 
 import { MochiAPI } from 'vanjacloud.shared.js'
+
 async function test() {
     const mochi = new MochiAPI(process.env.MOCHI_KEY)
     adze.info('mochi created, listing cards', mochi)
@@ -82,10 +83,24 @@ async function test() {
     const decks = r.docs
     const vanjacloud = decks.find(d => d.name == 'vanjacloud')
     adze.info('vanjacloud deck', vanjacloud)
-    const c = await mochi.addCard(vanjacloud.id, {
-        content: 'test?\n-----\nyes!'
-    })
+    // const c = await mochi.addCard(vanjacloud.id, {
+    //     content: 'test?\n-----\nyes!'
+    // })
     adze.info(c)
+}
+
+import io from '@pm2/io';
+
+async function testMetric() {
+
+
+    const myMetric = io.metric({
+        name: 'Custom Metric',
+    });
+
+    setInterval(() => {
+        myMetric.set(Math.random() * 100);
+    }, 1000);
 }
 
 init();

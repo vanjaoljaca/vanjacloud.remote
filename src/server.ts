@@ -64,7 +64,7 @@ export function createServer(options: CreateServerOptions) {
     server
         .guard("/", async (req, res) => {
             const debugHeader = req.headers.get('VanjaCloud-Debug');
-            adze.info('debug header', debugHeader);
+            adze.info("guard('/')", new URL(req.url).pathname, 'debug header', debugHeader);
         })
         .get('/', () => new Response('Hi'))
         .get('/version', () => {
@@ -84,18 +84,18 @@ export function createServer(options: CreateServerOptions) {
             const cards = data.cards
 
 
-            adze.info('adding cards', cards)
             const r = await mochi.listDecks();
             const decks = r.docs
             const vanjacloud = decks.find(d => d.name == 'vanjacloud')
             adze.info('vanjacloud deck', vanjacloud)
-            for (const card of cards) {
+            // for (const card of cards) {
+            const card = cards[0];
                 const c = await mochi.addCard(vanjacloud.id, {
                     content: `${card.front}\n-----\n${card.back}`
                 })
 
-                adze.info(c)
-            }
+                adze.info('added card', c.id)
+            // }
             return new Response('Hi');
         })
         .post('/myspace', async (req) => {
