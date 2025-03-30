@@ -10,7 +10,7 @@ import vanjacloud, { AzureTranslate, Thought } from 'vanjacloud.shared.js';
 
 import adze, { setup } from 'adze';
 import { MochiAPI } from 'vanjacloud.shared.js'
-const mochi = new MochiAPI(process.env.MOCHI_KEY)
+const mochi = new MochiAPI(process.env.MOCHI_KEY as string);
 
 
 setup({
@@ -59,7 +59,7 @@ export function createServer(options: CreateServerOptions) {
         hostname: '0.0.0.0',
         port: useHttps ? 443 : 80,
         ...serverOptions,
-    });
+    } as any);
 
     server
         .guard("/", async (req, res) => {
@@ -76,31 +76,35 @@ export function createServer(options: CreateServerOptions) {
             };
             console.log('versionInfo', versionInfo);
 
-            return new Response(JSON.stringify(versionInfo));
+            return Response.json(versionInfo);
         })
         .post('/', () => new Response('Hi'))
         .post('/mochi/add', async (req) => {
             const data = await req.json();
             const cards = data.cards
-
+            adze.info('cards', cards)
 
             const r = await mochi.listDecks();
             const decks = r.docs
-            const vanjacloud = decks.find(d => d.name == 'vanjacloud')
+            const vanjacloud = decks.find((d: any) => d.name == 'vanjacloud')
             adze.info('vanjacloud deck', vanjacloud)
-            // for (const card of cards) {
-            const card = cards[0];
+
+            const cardIds = [];
+            for (const card of cards) {
+            // const card = cards[0];
                 const c = await mochi.addCard(vanjacloud.id, {
                     content: `${card.front}\n-----\n${card.back}`
                 })
 
                 adze.info('added card', c.id)
-            // }
-            return new Response('Hi');
+                cardIds.push(c.id);
+            }
+
+            return Response.json({cardIds});
         })
         .post('/myspace', async (req) => {
             const data = await req.json();
-            return new Response(JSON.stringify(data));
+            return Response.json(data);
         })
         .post('/retrospective', async (req) => {
             const data = await req.json();
@@ -118,14 +122,14 @@ export function createServer(options: CreateServerOptions) {
             });
             const response = { text: r.choices[0].text };
             console.log({ response });
-            return new Response(JSON.stringify(response));
+            return Response.json(response);
         })
         .post('/translate', async (req) => {
 
             const data = await req.json();
             adze.debug('/translate', { data })
             const response = await bulkTranslateText(data.text, data.to);
-            return new Response(JSON.stringify(response));
+            return Response.json(response);
         })
         .post('/explain', async (req) => {
             const data = await req.json();
@@ -140,7 +144,7 @@ export function createServer(options: CreateServerOptions) {
             });
             const response = { response: r.choices[0].text };
             console.log({ data, response });
-            return new Response(JSON.stringify(response));
+            return Response.json(response);
         })
         .post('/audio', async (req) => {
             const fileName = `${moment()}`;

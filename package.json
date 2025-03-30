@@ -16,6 +16,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@pm2/io": "^6.1.0",
     "@stricjs/router": "^5.0.6",
     "@stricjs/utils": "^2.0.7",
     "@types/node-schedule": "^2.1.7",
